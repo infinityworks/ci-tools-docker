@@ -1,9 +1,9 @@
 FROM java:8-jdk
 
-MAINTAINER Ayache Khettar <ayache.khettar@infinityworks.com> 
+MAINTAINER Ayache Khettar <ayache.khettar@infinityworks.com>
 
 RUN apt-get update && apt-get install -y git curl zip sudo ruby && rm -rf /var/lib/apt/lists/*
- 
+
 
 ENV JAVA_OPTS="-XX:PermSize=1024m -XX:MaxPermSize=512m"
 
@@ -16,12 +16,13 @@ ARG uid=1000
 ARG gid=1000
 
 # Jenkins is run with user `jenkins`, uid = 1000
-# If you bind mount a volume from the host or a data container, 
+# If you bind mount a volume from the host or a data container,
 # ensure you use the same uid
-RUN groupadd -g ${gid} ${group} \
-    && useradd -d "$JENKINS_HOME" -u ${uid} -g ${gid} -m -s /bin/bash ${user}
 
-# Jenkins home directory is a volume, so configuration and build history 
+# adding docker group with the same guid as the mounted volume
+RUN guid=$(stat -c '%g' /var/run/docker.sock) && addgroup --gid $guid docker && addgroup --system jenkins docker
+
+# Jenkins home directory is a volume, so configuration and build history
 # can be persisted and survive image upgrades
 VOLUME /var/jenkins_home
 
@@ -30,8 +31,8 @@ VOLUME /var/jenkins_home
 RUN echo "jenkins   ALL=(ALL)  NOPASSWD:ALL" >> etc/sudoers
 
 
-# `/usr/share/jenkins/ref/` contains all reference configuration we want 
-# to set on a fresh new installation. Use it to bundle additional plugins 
+# `/usr/share/jenkins/ref/` contains all reference configuration we want
+# to set on a fresh new installation. Use it to bundle additional plugins
 # or config file with your custom jenkins Docker image.
 RUN mkdir -p /usr/share/jenkins/ref/init.groovy.d
 
@@ -51,7 +52,7 @@ ARG JENKINS_SHA
 ENV JENKINS_SHA ${JENKINS_SHA:-da06f963edb627f0ced2fce612f9985d1928f79b}
 
 
-# could use ADD but this one does not check Last-Modified header 
+# could use ADD but this one does not check Last-Modified header
 # see https://github.com/docker/docker/issues/8331
 RUN curl -fsSL http://repo.jenkins-ci.org/public/org/jenkins-ci/main/jenkins-war/${JENKINS_VERSION}/jenkins-war-${JENKINS_VERSION}.war -o /usr/share/jenkins/jenkins.war \
   && echo "$JENKINS_SHA  /usr/share/jenkins/jenkins.war" | sha1sum -c -
@@ -89,18 +90,7 @@ COPY config/org.jenkinsci.plugins.docker.commons.tools.DockerTool.xml /usr/share
 COPY config/settings.xml /usr/share/jenkins/ref/settings.xml
 COPY config/settings.xml /var/jenkins_home/settings.xml
 
-
+# setting jenkins binary run file
 COPY jenkins.sh /usr/local/bin/jenkins.sh
-COPY entryPoint.sh /usr/local/bin/entryPoint.sh
-RUN sudo chmod +x /usr/local/bin/entryPoint.sh
-
-ENTRYPOINT ["/bin/tini", "--", "/usr/local/bin/entryPoint.sh"]
-
-
-
-
-
-
-
-
-
+COPY entrypoint.sh /usr/local/bin/entrypoint.sh
+ENTRYPOINT ["/bin/tini", "--", "/usr/local/bin/entrypoint.sh"]
