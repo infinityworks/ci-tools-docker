@@ -61,6 +61,8 @@ ENV JENKINS_UC https://updates.jenkins-ci.org
 
 RUN chown -R ${user} "$JENKINS_HOME" /usr/share/jenkins/ref
 
+# Install Docker binaries
+RUN sudo apt-get
 
 # for main web interface:
 EXPOSE 8080
@@ -87,14 +89,12 @@ COPY config/org.jenkinsci.plugins.docker.commons.tools.DockerTool.xml /usr/share
 COPY config/settings.xml /usr/share/jenkins/ref/settings.xml
 COPY config/settings.xml /var/jenkins_home/settings.xml
 
-CMD sudo chown jenkins /var/run/docker.sock
-CMD sudo chown jenkins /usr/bin/docker
 
 COPY jenkins.sh /usr/local/bin/jenkins.sh
-COPY jenkinsRun.sh /usr/local/bin/jenkinsRun.sh
-RUN sudo chmod +x /usr/local/bin/jenkinsRun.sh
+COPY entryPoint.sh /usr/local/bin/entryPoint.sh
+RUN sudo chmod +x /usr/local/bin/entryPoint.sh
 
-ENTRYPOINT ["/bin/tini", "--", "/usr/local/bin/jenkinsRun.sh"]
+ENTRYPOINT ["/bin/tini", "--", "/usr/local/bin/entryPoint.sh"]
 
 
 
