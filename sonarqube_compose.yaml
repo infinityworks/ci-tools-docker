@@ -1,0 +1,39 @@
+postgresql:
+  image: postgres
+  environment:
+    - POSTGRESQL_USER=sonar
+    - POSTGRESQL_PASS=sonar
+    - POSTGRESQL_DB=sonar
+  
+  ports:
+    - "5432:5432"
+sonarqube:
+  image: sonarqube
+  links:
+    - postgresql:db
+  environment:
+    - DB_USER=sonar
+    - DB_PASS=sonar
+    - DB_NAME=sonar
+  ports:
+    - "9000:9000"
+    - "443"   
+	
+selhub:
+  image: selenium/hub
+  ports:
+    - 4444:4444
+
+nodeff:
+  image: selenium/node-firefox-debug
+  ports:
+    - 5900
+  links:
+    - selhub:hub
+
+nodechrome:
+  image: selenium/node-chrome-debug
+  ports:
+    - 5900
+  links:
+    - selhub:hub
