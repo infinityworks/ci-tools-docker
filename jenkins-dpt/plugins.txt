@@ -1,0 +1,4 @@
+docker-workflow:1.4
+docker-plugin:0.16.0
+docker-custom-build-environment:1.6.5
+
